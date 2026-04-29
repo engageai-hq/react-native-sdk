@@ -1,6 +1,6 @@
 {
   "name": "@engageai/react-native-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "EngageAI voice + text AI assistant SDK for React Native — let users control your app with natural language",
   "license": "MIT",
   "author": "Engage Technologies Limited",

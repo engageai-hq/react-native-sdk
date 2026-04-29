@@ -272,7 +272,7 @@ export function EngageVoiceChatModal({
             ))}
 
             {/* Confirmation buttons */}
-            {messages.at(-1)?.isConfirmation && (
+            {messages[messages.length - 1]?.isConfirmation && (
               <View style={styles.confirmRow}>
                 <TouchableOpacity
                   style={[styles.confirmBtn, { backgroundColor: primaryColor }]}

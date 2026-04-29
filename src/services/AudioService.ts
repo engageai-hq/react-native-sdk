@@ -3,18 +3,40 @@
  *
  * Peer deps: expo-av >=14, expo-file-system >=17
  * Pass both modules when constructing so Metro bundles them correctly.
+ *
+ * IMPORTANT: import FileSystem from 'expo-file-system/legacy' in your app:
+ *   import * as FileSystem from 'expo-file-system/legacy';
+ * The legacy module exposes `cacheDirectory`, `readAsStringAsync`, and
+ * `writeAsStringAsync` which this service needs. The modern `expo-file-system`
+ * (without /legacy) split these into a different API.
  */
 
 import type { Audio } from 'expo-av';
-import type * as FileSystemType from 'expo-file-system';
 
 export type ExpoAudio = typeof Audio;
-export type ExpoFileSystem = typeof FileSystemType;
+
+/**
+ * Structural type for the subset of expo-file-system we use. Defined
+ * structurally rather than `typeof FileSystem` so the SDK works whether the
+ * caller imports from 'expo-file-system' or 'expo-file-system/legacy'.
+ */
+export interface ExpoFileSystem {
+  cacheDirectory: string | null;
+  readAsStringAsync(
+    uri: string,
+    options?: { encoding?: string }
+  ): Promise<string>;
+  writeAsStringAsync(
+    uri: string,
+    contents: string,
+    options?: { encoding?: string }
+  ): Promise<void>;
+}
 
 export interface AudioServiceConfig {
   /** Pass `Audio` from `import { Audio } from 'expo-av'` */
   Audio: ExpoAudio;
-  /** Pass `* as FileSystem` from `import * as FileSystem from 'expo-file-system'` */
+  /** Pass `* as FileSystem` from `import * as FileSystem from 'expo-file-system/legacy'` */
   FileSystem: ExpoFileSystem;
 }
 
@@ -65,7 +87,7 @@ export class AudioService {
     if (!uri) throw new Error('Recording URI is null');
 
     const base64 = await this.FileSystem.readAsStringAsync(uri, {
-      encoding: 'base64' as any,
+      encoding: 'base64',
     });
 
     return { base64, uri };
@@ -83,9 +105,17 @@ export class AudioService {
   async playBase64Audio(base64: string): Promise<void> {
     await this.stopPlayback();
 
-    const uri = `${this.FileSystem.cacheDirectory}engage_tts_${Date.now()}.mp3`;
+    const cacheDir = this.FileSystem.cacheDirectory;
+    if (!cacheDir) {
+      throw new Error(
+        'FileSystem.cacheDirectory is null. Make sure you imported FileSystem ' +
+        'from "expo-file-system/legacy" (not the modern API).'
+      );
+    }
+
+    const uri = `${cacheDir}engage_tts_${Date.now()}.mp3`;
     await this.FileSystem.writeAsStringAsync(uri, base64, {
-      encoding: 'base64' as any,
+      encoding: 'base64',
     });
 
     await this.Audio.setAudioModeAsync({

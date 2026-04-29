@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { EngageAI } from '../core/EngageAI';
 import { ApiClient } from '../services/ApiClient';
-import { AudioService, ExpoAudio } from '../services/AudioService';
+import { AudioService, ExpoAudio, ExpoFileSystem } from '../services/AudioService';
 import { AgentAction } from '../models';
 
 export type VoiceStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
@@ -20,17 +20,29 @@ export interface UseVoiceChatResult {
 /**
  * Hook for voice-based interaction with EngageAI.
  *
- * Requires expo-av and expo-file-system to be installed in the host app.
+ * Requires `expo-av` and `expo-file-system` (legacy import) installed in the
+ * host app. Pass both modules through to the hook so the SDK can use them
+ * without forcing the dependency tree.
+ *
+ * Most apps should use {@link EngageVoiceChatModal} instead — it handles the
+ * full voice UI flow. Use this hook only if you're building a custom UI.
  *
  * @example
  * ```tsx
  * import { Audio } from 'expo-av';
- * const { voiceStatus, startListening, stopListening } = useVoiceChat(engageAI, Audio);
+ * import * as FileSystem from 'expo-file-system/legacy';
+ *
+ * const { voiceStatus, startListening, stopListening } = useVoiceChat(
+ *   engageAI,
+ *   Audio,
+ *   FileSystem,
+ * );
  * ```
  */
 export function useVoiceChat(
   engageAI: EngageAI,
   ExpoAudioModule: ExpoAudio,
+  ExpoFileSystemModule: ExpoFileSystem,
 ): UseVoiceChatResult {
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('idle');
   const [transcript, setTranscript] = useState('');
@@ -42,7 +54,10 @@ export function useVoiceChat(
 
   const getAudio = (): AudioService => {
     if (!audioRef.current) {
-      audioRef.current = new AudioService({ Audio: ExpoAudioModule });
+      audioRef.current = new AudioService({
+        Audio: ExpoAudioModule,
+        FileSystem: ExpoFileSystemModule,
+      });
     }
     return audioRef.current;
   };
