@@ -29,6 +29,7 @@ export interface AppFunction {
   parameters: Record<string, unknown>;
   handler: FunctionHandler;
   requiresConfirmation?: boolean;
+  examples?: string[];
 }
 
 // ─── Agent actions ────────────────────────────────────────────────────────────
